@@ -1,0 +1,17 @@
+{
+  "name": "工作信息卡",
+  "short_name": "信息卡",
+  "description": "微信工作信息自动汇总",
+  "start_url": "/info-cards/info-cards.html",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a1a1a'/><text x='50' y='65' text-anchor='middle' font-size='50' fill='%23ff4d4d'>📋</text></svg>",
+      "sizes": "100x100",
+      "type": "image/svg+xml"
+    }
+  ]
+}
