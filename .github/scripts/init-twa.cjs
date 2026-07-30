@@ -21,6 +21,7 @@ const twa = new TwaManifest({
   maskableIconUrl: 'https://jj55-aa.github.io/info-cards/icon-512.png',
   enableNotifications: false,
   signingKey: { path: './debug.keystore', alias: 'androiddebugkey', password: 'android' },
+  enableNotifications: false,
 });
 
 execSync(
