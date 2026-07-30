@@ -5,78 +5,57 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
-import android.os.Looper;
 import android.widget.RemoteViews;
-import org.json.JSONObject;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 public class InfoCardsWidgetProvider extends AppWidgetProvider {
-
     @Override
-    public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
+    public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
         for (int id : ids) {
-            showLoading(context, manager, id);
-            fetchCards(context, manager, id);
+            RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
+            Intent intent = new Intent(ctx, InfoCardsWidgetProvider.class);
+            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[]{id});
+            views.setOnClickPendingIntent(R.id.widget_root,
+                PendingIntent.getBroadcast(ctx, id, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+            mgr.updateAppWidget(id, views);
+            DataLoader.load(ctx, mgr, id);
         }
     }
+}
 
-    private void showLoading(Context ctx, AppWidgetManager mgr, int id) {
-        RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
-        Intent intent = new Intent(ctx, InfoCardsWidgetProvider.class);
-        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[]{id});
-        views.setOnClickPendingIntent(R.id.widget_root,
-            PendingIntent.getBroadcast(ctx, id, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-        mgr.updateAppWidget(id, views);
-    }
-
-    private void fetchCards(Context ctx, AppWidgetManager mgr, int id) {
+class DataLoader {
+    static void load(Context ctx, AppWidgetManager mgr, int id) {
         new Thread(() -> {
             try {
-                URL url = new URL("https://jj55-aa.github.io/info-cards/info-cards.json");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                StringBuilder sb = new StringBuilder();
-                java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(conn.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) sb.append(line);
-                reader.close();
-                conn.disconnect();
+                java.net.URL url = new java.net.URL("https://jj55-aa.github.io/info-cards/info-cards.json");
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(5000); conn.setReadTimeout(5000);
+                java.io.InputStream is = conn.getInputStream();
+                byte[] buf = new byte[4096]; StringBuilder sb = new StringBuilder();
+                int n; while ((n = is.read(buf)) != -1) sb.append(new String(buf,0,n));
+                is.close(); conn.disconnect();
 
-                JSONObject json = new JSONObject(sb.toString());
-                org.json.JSONArray cards = json.getJSONArray("cards");
-
+                org.json.JSONArray arr = new org.json.JSONObject(sb.toString()).getJSONArray("cards");
                 RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
-                views.setTextViewText(R.id.widget_subtitle, cards.length() + " 张卡片 · 点击刷新");
+                views.setTextViewText(R.id.widget_subtitle, arr.length() + " 张 · 点击刷新");
                 views.removeAllViews(R.id.card_container);
-
-                for (int i = 0; i < Math.min(cards.length(), 5); i++) {
-                    JSONObject c = cards.getJSONObject(i);
-                    String src = c.getString("source") + " " + c.getString("time");
-                    String sum = c.getString("summary");
+                int max = Math.min(arr.length(), 5);
+                for (int i = 0; i < max; i++) {
+                    org.json.JSONObject c = arr.getJSONObject(i);
                     String p = c.getString("priority");
-                    int color = p.equals("high") ? 0xffff4d4d :
-                                p.equals("low") ? 0xff4d94ff : 0xfff0a500;
-
+                    int color = p.equals("high") ? 0xffff4d4d : p.equals("low") ? 0xff4d94ff : 0xfff0a500;
                     RemoteViews row = new RemoteViews(ctx.getPackageName(), R.layout.info_card_row);
-                    row.setTextViewText(R.id.card_source, src);
-                    row.setTextViewText(R.id.card_summary, sum);
+                    row.setTextViewText(R.id.card_source, c.getString("source") + " " + c.getString("time"));
+                    row.setTextViewText(R.id.card_summary, c.getString("summary"));
                     row.setInt(R.id.card_border, "setBackgroundColor", color);
                     views.addView(R.id.card_container, row);
                 }
-
-                new Handler(Looper.getMainLooper()).post(() -> mgr.updateAppWidget(id, views));
-            } catch (Exception e) {
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
-                    views.setTextViewText(R.id.widget_subtitle, "加载失败 · 点击重试");
-                    mgr.updateAppWidget(id, views);
-                });
+                mgr.partiallyUpdateAppWidget(id, views);
+            } catch (Exception ignored) {
+                RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
+                views.setTextViewText(R.id.widget_subtitle, "加载失败 · 点击重试");
+                mgr.partiallyUpdateAppWidget(id, views);
             }
         }).start();
     }
