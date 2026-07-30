@@ -5,6 +5,8 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.RemoteViews;
 
 public class InfoCardsWidgetProvider extends AppWidgetProvider {
@@ -27,6 +29,7 @@ public class InfoCardsWidgetProvider extends AppWidgetProvider {
 class DataLoader {
     static void load(Context ctx, AppWidgetManager mgr, int id) {
         new Thread(() -> {
+            Handler main = new Handler(Looper.getMainLooper());
             try {
                 java.net.URL url = new java.net.URL("https://jj55-aa.github.io/info-cards/info-cards.json");
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
@@ -51,11 +54,11 @@ class DataLoader {
                     row.setInt(R.id.card_border, "setBackgroundColor", color);
                     views.addView(R.id.card_container, row);
                 }
-                mgr.updateAppWidget(id, views);
+                main.post(() -> mgr.updateAppWidget(id, views));
             } catch (Exception ignored) {
                 RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
                 views.setTextViewText(R.id.widget_subtitle, "加载失败 · 点击重试");
-                mgr.updateAppWidget(id, views);
+                main.post(() -> mgr.updateAppWidget(id, views));
             }
         }).start();
     }
