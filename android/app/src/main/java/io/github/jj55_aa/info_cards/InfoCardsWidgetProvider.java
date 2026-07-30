@@ -13,16 +13,22 @@ public class InfoCardsWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context ctx, AppWidgetManager mgr, int[] ids) {
         for (int id : ids) {
-            RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
-            Intent intent = new Intent(ctx, InfoCardsWidgetProvider.class);
-            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[]{id});
-            views.setOnClickPendingIntent(R.id.widget_root,
-                PendingIntent.getBroadcast(ctx, id, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-            mgr.updateAppWidget(id, views);
+            RemoteViews v = makeViews(ctx, id, "加载中...");
+            mgr.updateAppWidget(id, v);
             loadData(ctx, mgr, id);
         }
+    }
+
+    static RemoteViews makeViews(Context ctx, int id, String subtitle) {
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
+        v.setTextViewText(R.id.widget_subtitle, subtitle);
+        Intent intent = new Intent(ctx, InfoCardsWidgetProvider.class);
+        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[]{id});
+        v.setOnClickPendingIntent(R.id.widget_root,
+            PendingIntent.getBroadcast(ctx, id, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        return v;
     }
 
     static void loadData(Context ctx, AppWidgetManager mgr, int id) {
@@ -36,19 +42,12 @@ public class InfoCardsWidgetProvider extends AppWidgetProvider {
                 while ((n = in.read(b)) != -1) s.append(new String(b,0,n));
                 in.close(); c.disconnect();
                 int count = new org.json.JSONObject(s.toString()).getJSONArray("cards").length();
-                Handler h = new Handler(Looper.getMainLooper());
-                h.post(() -> {
-                    RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
-                    v.setTextViewText(R.id.widget_subtitle, count + " 张卡片 · 点击刷新");
-                    mgr.updateAppWidget(id, v);
-                });
+                String text = count > 0 ? count + " 张卡片 " + java.time.LocalTime.now().toString().substring(0,5) : "暂无信息";
+                new Handler(Looper.getMainLooper()).post(() ->
+                    mgr.updateAppWidget(id, makeViews(ctx, id, text)));
             } catch (Exception e) {
-                Handler h = new Handler(Looper.getMainLooper());
-                h.post(() -> {
-                    RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
-                    v.setTextViewText(R.id.widget_subtitle, "加载失败 · 点击重试");
-                    mgr.updateAppWidget(id, v);
-                });
+                new Handler(Looper.getMainLooper()).post(() ->
+                    mgr.updateAppWidget(id, makeViews(ctx, id, "失败: " + e.getMessage().substring(0, Math.min(20, e.getMessage().length())))));
             }
         }).start();
     }
