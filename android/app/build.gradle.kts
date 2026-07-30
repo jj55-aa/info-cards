@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "io.github.jj55_aa.info_cards"
-    compileSdk = 36
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "io.github.jj55_aa.info_cards"
