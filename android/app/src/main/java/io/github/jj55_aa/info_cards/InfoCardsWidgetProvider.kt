@@ -5,26 +5,30 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.util.TypedValue
-import android.view.Gravity
-import android.widget.LinearLayout
 import android.widget.RemoteViews
-import android.widget.TextView
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
 
 class InfoCardsWidgetProvider : AppWidgetProvider() {
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        for (id in appWidgetIds) {
+
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        for (id in ids) {
             val views = RemoteViews(context.packageName, R.layout.info_widget)
-            appWidgetManager.updateAppWidget(id, views)
-            fetchAndUpdate(context, appWidgetManager, id)
+            // Set up refresh tap
+            val intent = Intent(context, InfoCardsWidgetProvider::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(id))
+            }
+            views.setOnClickPendingIntent(R.id.widget_root,
+                PendingIntent.getBroadcast(context, id, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+            manager.updateAppWidget(id, views)
+            // Fetch data in background
+            fetchAndUpdate(context, manager, id)
         }
     }
 
@@ -44,30 +48,26 @@ class InfoCardsWidgetProvider : AppWidgetProvider() {
                     }
                     val cards = JSONObject(text).getJSONArray("cards")
                     val views = RemoteViews(context.packageName, R.layout.info_widget)
-                    val containerId = R.id.card_container
-                    views.removeAllViews(containerId)
+                    val container = R.id.card_container
+                    views.removeAllViews(container)
+
                     for (i in 0 until minOf(cards.length(), 5)) {
                         val c = cards.getJSONObject(i)
                         val p = c.optString("priority", "mid")
-                        val borderColor = when(p) { "high" -> 0xffff4d4d.toInt() "low" -> 0xff4d94ff.toInt() else -> 0xfff0a500.toInt() }
-                        val source = "${c.optString("source")} ${c.optString("time")}"
-                        val summary = c.optString("summary")
-                        val rowView = RemoteViews(context.packageName, R.layout.info_card_row)
-                        rowView.setTextViewText(R.id.card_source, source)
-                        rowView.setTextViewText(R.id.card_summary, summary)
-                        rowView.setInt(R.id.card_border, "setBackgroundColor", borderColor)
-                        views.addView(containerId, rowView)
+                        val row = RemoteViews(context.packageName, R.layout.info_card_row)
+                        row.setTextViewText(R.id.card_source, "${c.optString("source")} ${c.optString("time")}")
+                        row.setTextViewText(R.id.card_summary, c.optString("summary"))
+                        row.setInt(R.id.card_border, "setBackgroundColor",
+                            when(p) { "high" -> 0xffff4d4d.toInt() "low" -> 0xff4d94ff.toInt() else -> 0xfff0a500.toInt() })
+                        views.addView(container, row)
                     }
-                    val intent = Intent(context, InfoCardsWidgetProvider::class.java).apply {
-                        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(widgetId))
-                    }
-                    val pi = PendingIntent.getBroadcast(context, widgetId, intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                    views.setOnClickPendingIntent(R.id.widget_root, pi)
+
+                    views.setTextViewText(R.id.widget_subtitle, cards.length().toString() + " 张卡片 · 点击刷新")
                     handler.post { manager.updateAppWidget(widgetId, views) }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    val views = RemoteViews(context.packageName, R.layout.info_widget)
+                    views.setTextViewText(R.id.widget_subtitle, "加载失败 · 点击重试")
+                    handler.post { manager.updateAppWidget(widgetId, views) }
                 }
             }
         }
