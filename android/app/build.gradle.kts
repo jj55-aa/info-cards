@@ -27,5 +27,5 @@ android {
 }
 
 dependencies {
-    implementation("org.json:json:20240303")
+    // org.json is built into Android SDK
 }
