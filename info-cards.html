@@ -86,10 +86,12 @@ async function load() {
     const r = await fetch(API + '?v=' + Date.now());
     const d = await r.json();
     const el = document.getElementById('cards');
-    if (!d.cards || d.cards.length === 0) {
+    const now = new Date();
+    const active = (d.cards || []).filter(c => !c.expires || new Date(c.expires) > now);
+    if (active.length === 0) {
       el.innerHTML = '<div class="empty">暂无工作信息<br>点右下角 + 新建卡片</div>';
     } else {
-      el.innerHTML = d.cards.slice().reverse().map(c => `
+      el.innerHTML = active.reverse().map(c => `
         <div class="card priority-${c.priority||'mid'}">
           <div class="card-source"><span>${c.source||'微信群'}</span><span>${c.time||''}</span></div>
           <div class="card-summary">${c.summary}</div>
