@@ -12,7 +12,7 @@ jobs:
       - uses: android-actions/setup-android@v3
       - run: npm install -g @bubblewrap/cli
       - name: Init TWA (Node API)
-        run: node .github/scripts/init-twa.mjs
+        run: node .github/scripts/init-twa.cjs
       - name: Build APK
         run: cd twa && chmod +x gradlew && ./gradlew assembleRelease
       - uses: actions/upload-artifact@v4
