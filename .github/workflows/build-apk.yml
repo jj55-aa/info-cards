@@ -13,15 +13,10 @@ jobs:
         with:
           sdk-platform: 34
           build-tools: 34.0.0
-      - name: Setup Gradle
-        run: |
-          curl -sL https://services.gradle.org/distributions/gradle-8.5-bin.zip -o /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /tmp
-          echo "/tmp/gradle-8.5/bin" >> $GITHUB_PATH
       - name: Build APK
         run: |
           cd android
-          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
           ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
