@@ -1,7 +1,5 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -11,7 +9,7 @@ android {
     defaultConfig {
         applicationId = "io.github.jj55_aa.info_cards"
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 2
         versionName = "2.0"
     }
@@ -26,13 +24,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 }
 
 dependencies {
-    implementation("androidx.glance:glance-appwidget:1.1.1")
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("org.json:json:20240303")
 }
