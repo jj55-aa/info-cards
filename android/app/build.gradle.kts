@@ -34,5 +34,5 @@ android {
 
 dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.12.0")
 }
