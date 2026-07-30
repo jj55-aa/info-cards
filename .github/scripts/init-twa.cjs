@@ -1,6 +1,6 @@
 // init-twa.cjs — CJS require resolves nested deps, ESM doesn't.
 const { execSync } = require('child_process');
-const { writeFileSync, readFileSync, existsSync } = require('fs');
+const { writeFileSync, readFileSync } = require('fs');
 
 const npmRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
 const { TwaManifest, TwaGenerator } = require(
@@ -31,8 +31,9 @@ execSync(
   { stdio: 'inherit' }
 );
 
-// ponytail: use sync callback to avoid async timing issues
-new TwaGenerator().createTwaProject('twa', twa).then(() => {
+(async () => {
+  await new TwaGenerator().createTwaProject('twa', twa);
+
   // ponytail: bubblewrap sometimes renders splashScreenFadeOutDuration empty — patch it
   let gradle = readFileSync('twa/app/build.gradle', 'utf8');
   gradle = gradle.replace(/splashScreenFadeOutDuration\s*:\s*,/g, 'splashScreenFadeOutDuration: 300,');
@@ -43,7 +44,7 @@ new TwaGenerator().createTwaProject('twa', twa).then(() => {
   writeFileSync('twa/app/src/main/res/values/strings.xml', xml);
 
   console.log('TWA project created and patched.');
-}).catch(e => {
+})().catch(e => {
   console.error('TWA generation failed:', e);
   process.exit(1);
 });
