@@ -19,9 +19,11 @@ const twa = new TwaManifest({
   webManifestUrl: 'https://jj55-aa.github.io/info-cards/manifest.json',
   iconUrl: 'https://jj55-aa.github.io/info-cards/icon-512.png',
   maskableIconUrl: 'https://jj55-aa.github.io/info-cards/icon-512.png',
-  enableNotifications: false,
   signingKey: { path: './debug.keystore', alias: 'androiddebugkey', password: 'android' },
   enableNotifications: false,
+  splashScreenFadeOutDuration: 300,
+  navigationColor: '#000000',
+  appVersion: '1.0.0',
 });
 
 execSync(
