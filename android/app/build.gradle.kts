@@ -7,7 +7,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "io.github.jj55_aa.info_cards"
+        applicationId = "io.github.jj55_aa.info_cards.widget"
         minSdk = 23
         targetSdk = 34
         versionCode = 2
