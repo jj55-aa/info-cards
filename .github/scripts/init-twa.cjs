@@ -32,6 +32,11 @@ execSync(
 );
 
 new TwaGenerator().createTwaProject('twa', twa).then(() => {
+  // ponytail: bubblewrap sometimes renders splashScreenFadeOutDuration empty — patch it
+  let gradle = readFileSync('twa/app/build.gradle', 'utf8');
+  gradle = gradle.replace(/splashScreenFadeOutDuration:\s*,/g, 'splashScreenFadeOutDuration: 300,');
+  writeFileSync('twa/app/build.gradle', gradle);
+
   const xml = readFileSync('twa/app/src/main/res/values/strings.xml', 'utf8')
     .replace(/<string name="appName">[^<]*</, '<string name="appName">信息卡<');
   writeFileSync('twa/app/src/main/res/values/strings.xml', xml);
