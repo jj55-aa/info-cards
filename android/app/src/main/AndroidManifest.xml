@@ -6,25 +6,12 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:label="信息卡"
+        android:supportsRtl="true">
 
-        <!-- ponytail: shell activity, closes immediately — widget lives on home screen -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:excludeFromRecents="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <!-- Glance receiver for widget rendering -->
         <receiver
-            android:name=".InfoCardsWidgetReceiver"
-            android:exported="true">
+            android:name=".InfoCardsWidgetProvider"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -34,4 +21,5 @@
         </receiver>
 
     </application>
+
 </manifest>
