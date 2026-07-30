@@ -9,9 +9,9 @@
 <title>工作信息卡</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#0f0f0f; color:#e0e0e0; min-height:100vh; padding:16px; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#0f0f0f; color:#e0e0e0; min-height:100vh; padding:16px; padding-bottom:80px; }
 h1 { font-size:18px; font-weight:600; margin-bottom:4px; color:#fff; }
-.subtitle { font-size:12px; color:#888; margin-bottom:20px; }
+.subtitle { font-size:12px; color:#888; margin-bottom:16px; }
 .card { background:#1a1a1a; border-radius:12px; padding:14px 16px; margin-bottom:12px; border-left:3px solid #444; }
 .card.priority-high { border-left-color:#ff4d4d; }
 .card.priority-mid { border-left-color:#f0a500; }
@@ -19,8 +19,25 @@ h1 { font-size:18px; font-weight:600; margin-bottom:4px; color:#fff; }
 .card-source { font-size:11px; color:#888; margin-bottom:6px; display:flex; justify-content:space-between; }
 .card-summary { font-size:15px; line-height:1.5; color:#ddd; }
 .empty { text-align:center; color:#555; padding:60px 20px; font-size:15px; }
-.refresh { position:fixed; bottom:20px; right:20px; width:44px; height:44px; border-radius:50%; background:#333; border:none; color:#fff; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .timestamp { text-align:right; font-size:10px; color:#555; margin-top:20px; }
+
+.fab { position:fixed; bottom:80px; right:20px; width:44px; height:44px; border-radius:50%; background:#4d94ff; border:none; color:#fff; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }
+.refresh { position:fixed; bottom:20px; right:20px; width:44px; height:44px; border-radius:50%; background:#333; border:none; color:#fff; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+.modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; }
+.modal.show { display:flex; }
+.modal-box { background:#1a1a1a; border-radius:16px; padding:24px; width:90%; max-width:360px; }
+.modal-box h2 { font-size:16px; color:#fff; margin-bottom:16px; }
+.modal-box label { display:block; font-size:12px; color:#888; margin-bottom:4px; }
+.modal-box input, .modal-box textarea { width:100%; background:#2a2a2a; border:1px solid #444; border-radius:8px; color:#fff; padding:10px; font-size:14px; margin-bottom:12px; }
+.modal-box textarea { height:80px; resize:none; }
+.modal-box select { width:100%; background:#2a2a2a; border:1px solid #444; border-radius:8px; color:#fff; padding:10px; font-size:14px; margin-bottom:12px; }
+.modal-btns { display:flex; gap:8px; }
+.modal-btns button { flex:1; padding:10px; border-radius:8px; border:none; font-size:14px; cursor:pointer; }
+.btn-cancel { background:#333; color:#aaa; }
+.btn-submit { background:#4d94ff; color:#fff; }
+.toast { position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:10px 20px; border-radius:8px; font-size:13px; z-index:200; opacity:0; transition:opacity .3s; }
+.toast.show { opacity:1; }
 </style>
 </head>
 <body>
@@ -28,9 +45,33 @@ h1 { font-size:18px; font-weight:600; margin-bottom:4px; color:#fff; }
 <p class="subtitle">微信重要消息自动汇总</p>
 <div id="cards"></div>
 <p class="timestamp" id="ts"></p>
+<button class="fab" onclick="openAdd()" title="添加卡片">+</button>
 <button class="refresh" onclick="load()" title="刷新">↻</button>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h2>新建卡片</h2>
+    <label>来源</label>
+    <input id="src" placeholder="如：工作群、会议记录">
+    <label>内容</label>
+    <textarea id="summary" placeholder="卡片内容..."></textarea>
+    <label>优先级</label>
+    <select id="priority">
+      <option value="mid">普通</option>
+      <option value="high">重要</option>
+      <option value="low">备忘</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAdd()">取消</button>
+      <button class="btn-submit" onclick="submitAdd()">提交</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
 <script>
 const API = 'info-cards.json';
+
 function timeAgo(iso) {
   if (!iso) return '';
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -39,13 +80,14 @@ function timeAgo(iso) {
   if (diff < 86400) return Math.floor(diff/3600) + '小时前';
   return Math.floor(diff/86400) + '天前';
 }
+
 async function load() {
   try {
     const r = await fetch(API + '?v=' + Date.now());
     const d = await r.json();
     const el = document.getElementById('cards');
     if (!d.cards || d.cards.length === 0) {
-      el.innerHTML = '<div class="empty">暂无工作信息<br>在微信里转发消息给 Hermes 并说「提取」</div>';
+      el.innerHTML = '<div class="empty">暂无工作信息<br>点右下角 + 新建卡片</div>';
     } else {
       el.innerHTML = d.cards.slice().reverse().map(c => `
         <div class="card priority-${c.priority||'mid'}">
@@ -59,6 +101,36 @@ async function load() {
     document.getElementById('cards').innerHTML = '<div class="empty">加载失败，下拉刷新</div>';
   }
 }
+
+function openAdd() { document.getElementById('modal').classList.add('show'); }
+function closeAdd() { document.getElementById('modal').classList.remove('show'); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+async function submitAdd() {
+  const src = document.getElementById('src').value.trim();
+  const summary = document.getElementById('summary').value.trim();
+  const priority = document.getElementById('priority').value;
+  if (!summary) return toast('请输入内容');
+
+  const p = {high:'🔴', mid:'🟡', low:'🔵'}[priority];
+  const text = `添加卡片 ${p}\n来源：${src||'手动添加'}\n内容：${summary}`;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    document.getElementById('src').value = '';
+    document.getElementById('summary').value = '';
+    closeAdd();
+    toast('已复制！贴在微信发给 Hermes');
+  } catch(e) {
+    toast('复制失败，请手动输入');
+  }
+}
+
 load();
 </script>
 </body>
