@@ -51,11 +51,11 @@ class DataLoader {
                     row.setInt(R.id.card_border, "setBackgroundColor", color);
                     views.addView(R.id.card_container, row);
                 }
-                mgr.partiallyUpdateAppWidget(id, views);
+                mgr.updateAppWidget(id, views);
             } catch (Exception ignored) {
                 RemoteViews views = new RemoteViews(ctx.getPackageName(), R.layout.info_widget);
                 views.setTextViewText(R.id.widget_subtitle, "加载失败 · 点击重试");
-                mgr.partiallyUpdateAppWidget(id, views);
+                mgr.updateAppWidget(id, views);
             }
         }).start();
     }
