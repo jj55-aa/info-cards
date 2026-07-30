@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">信息卡</string>
+    <string name="widget_description">桌面信息卡片 · 点击刷新</string>
+</resources>
